@@ -1,0 +1,94 @@
+/**
+ * Parses incoming data from Arduino
+ * Handles format: KEY:VALUE
+ * 
+ * @author [Your Name]
+ * @version 1.0
+ */
+public class DataParser {
+    
+    /**
+     * Parses a line of data from Arduino and updates the GUI
+     */
+    public static void parseData(String data, DistanceMonitorGUI gui) {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+        
+        // Check for ACK messages
+        if (data.startsWith("ACK:")) {
+            gui.logEvent("Arduino acknowledged: " + data);
+            return;
+        }
+        
+        // Check for STATUS messages
+        if (data.startsWith("STATUS:")) {
+            String status = data.substring(7);
+            gui.logEvent("Arduino status: " + status);
+            return;
+        }
+        
+        // Parse KEY:VALUE format
+        int colonIndex = data.indexOf(':');
+        if (colonIndex <= 0) {
+            gui.logEvent("Unknown data: " + data);
+            return;
+        }
+        
+        String key = data.substring(0, colonIndex);
+        String value = data.substring(colonIndex + 1);
+        
+        // Handle different message types
+        switch (key) {
+            case "DIST":
+                try {
+                    int distance = Integer.parseInt(value);
+                    gui.updateDistance(distance);
+                } catch (NumberFormatException e) {
+                    gui.logEvent("Invalid distance: " + value);
+                }
+                break;
+                
+            case "THRESH":
+                try {
+                    int threshold = Integer.parseInt(value);
+                    gui.updateThreshold(threshold);
+                } catch (NumberFormatException e) {
+                    gui.logEvent("Invalid threshold: " + value);
+                }
+                break;
+                
+            case "LED":
+                if (value.equals("ON")) {
+                    gui.updateLedIndicator(true);
+                } else if (value.equals("OFF")) {
+                    gui.updateLedIndicator(false);
+                } else {
+                    gui.logEvent("Invalid LED state: " + value);
+                }
+                break;
+                
+            case "MODE":
+                if (value.equals("AUTO")) {
+                    gui.updateMode(true);
+                } else if (value.equals("MANUAL")) {
+                    gui.updateMode(false);
+                } else {
+                    gui.logEvent("Invalid mode: " + value);
+                }
+                break;
+                
+            case "BUTTON":
+                gui.logEvent("Button pressed locally");
+                break;
+                
+            case "SWITCH":
+                gui.logEvent("Switch changed to: " + value);
+                break;
+                
+            default:
+                gui.logEvent("Unknown message: " + key + ":" + value);
+                break;
+        }
+    }
+}
